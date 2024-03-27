@@ -1,35 +1,109 @@
+import { PlusCircle } from '@phosphor-icons/react'
+
+import styles from './App.module.css'
+
+import { Button } from './components/Button/Button'
+import { Header } from './components/Header/Header'
+import { Input } from './components/Input/Input'
+
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Header as ListHeader } from './components/List/Header/Header'
+import { Item as ListItem } from './components/List/Item/Item'
+import { Panel as ListPanel } from './components/List/Panel/Panel'
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+export interface ITask {
+  id: number
+  text: string
+  isChecked: boolean
 }
 
-export default App
+export function App() {
+  const [tasks, setTasks] = useState<ITask[]>([])
+  const [inputValue, setInputValue] = useState('')
+
+  const checkedTasksCounter = tasks.reduce((prevValue, currentTask) => {
+    if (currentTask.isChecked) {
+      return prevValue + 1
+    }
+
+    return prevValue
+  }, 0)
+
+  function handleAddTask() {
+    if (!inputValue) {
+      return
+    }
+
+    const newTask: ITask = {
+      id: new Date().getTime(),
+      text: inputValue,
+      isChecked: false,
+    }
+
+    setTasks((state) => [...state, newTask])
+    setInputValue('')
+  }
+
+  function handleRemoveTask(id: number) {
+    const filteredTasks = tasks.filter((task) => task.id !== id)
+
+    if (!confirm('Deseja mesmo apagar essa tarefa?')) {
+      return
+    }
+
+    setTasks(filteredTasks)
+  }
+
+  function handleToggleTask({ id, value }: { id: number; value: boolean }) {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === id) {
+        return { ...task, isChecked: value }
+      }
+
+      return { ...task }
+    })
+
+    setTasks(updatedTasks)
+  }
+
+  return (
+    <main>
+      <Header />
+
+      <section className={styles.content}>
+        <div className={styles.taskInfoContainer}>
+          <Input
+            onChange={(e) => setInputValue(e.target.value)}
+            value={inputValue}
+          />
+          <Button onClick={handleAddTask}>
+            Criar
+            <PlusCircle size={24} color="#f2f2f2" weight="bold" />
+          </Button>
+        </div>
+
+        <div className={styles.taskList}>
+          <ListHeader
+            tasksCounter={tasks.length}
+            checkedTasksCounter={checkedTasksCounter}
+          />
+        </div>
+
+        {tasks.length > 0 ? (
+          <div>
+            {tasks.map((task) => (
+              <ListItem
+                key={task.id}
+                data={task}
+                removeTask={handleRemoveTask}
+                toggleTaskStatus={handleToggleTask}
+              />
+            ))}
+          </div>
+        ) : (
+          <ListPanel />
+        )}
+      </section>
+    </main>
+  )
+}
